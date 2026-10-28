@@ -26,7 +26,7 @@ Salonko je spletna aplikacija za rezervacijo terminov v frizerskem salonu. Stran
 ## Struktura repozitorija
 
 ```
-frontend/   aplikacija React
-backend/    REST API v Expressu
+frontend/   aplikacija React 
+backend/    REST API v Express
 docs/       projektna dokumentacija, wireframi in ADR
 ```
