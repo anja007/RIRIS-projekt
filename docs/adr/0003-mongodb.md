@@ -14,7 +14,6 @@ Aplikacija mora trajno hraniti uporabnike, storitve in termine. Projekt je napis
 
 - MongoDB (dokumentna baza), lokalno nameščen
 - MongoDB v oblaku (MongoDB Atlas)
-- PostgreSQL (relacijska baza)
 
 ## Odločitev
 
