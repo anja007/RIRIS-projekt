@@ -4,14 +4,49 @@ Salonko je spletna aplikacija za rezervacijo terminov v frizerskem salonu. Stran
 
 ## Tehnologije
 
-| Področje             | Tehnologije                                         |
-| -------------------- | --------------------------------------------------- |
+| Področje | Tehnologije |
+|---|---|
 | Odjemalec (frontend) | React, TypeScript, Vite, React Router, Tailwind CSS |
-| Zaledje (backend)    | Node.js, Express, TypeScript, Zod                   |
-| Podatkovna baza      | MongoDB, Mongoose                                   |
-| Avtentikacija        | JWT v piškotku httpOnly, bcrypt                     |
-| Lokalni razvoj       | Docker Compose, npm, ESLint, Prettier               |
-| Testiranje           | Vitest, Supertest                                   |
+| Zaledje (backend) | Node.js, Express, TypeScript, Zod |
+| Podatkovna baza | MongoDB, Mongoose |
+| Avtentikacija | JWT v piškotku httpOnly, bcrypt |
+| Lokalni razvoj | Docker Compose, npm, ESLint, Prettier |
+| Testiranje | Vitest, Supertest |
+
+## Lokalni zagon
+
+### Predpogoji
+
+- Node.js 20 ali novejši in npm
+- Docker Desktop (zagnan)
+
+### 1. Zagon MongoDB v Dockerju
+
+V korenski mapi projekta:
+
+```bash
+docker compose up -d
+```
+
+Ukaz zažene MongoDB 7 v vsebniku `salonko-mongo` kot replica set z enim vozliščem (`rs0`), ker rezervacija uporablja transakcije. Ob prvem zagonu počakajte približno 10 sekund, da `docker compose ps` pri vsebniku pokaže `healthy`. Podatki ostanejo v volumnu `mongo-data` tudi po `docker compose down`.
+
+Če je na računalniku nameščen in zagnan tudi lokalni MongoDB, ga najprej ustavite (Windows: *Services* → *MongoDB Server* → *Stop*), ker uporablja ista vrata 27017.
+
+### 2. Nastavitve zaledja
+
+Kopirajte `backend/.env.example` v `backend/.env` in po želji spremenite `JWT_SECRET`.
+
+### 3. Namestitev in zagon
+
+V korenski mapi projekta:
+
+```bash
+npm install
+npm run dev
+```
+
+- Odjemalec: http://localhost:5173
+- Zaledje: http://localhost:3000 (npr. http://localhost:3000/api/health)
 
 ## Dokumentacija
 
@@ -26,7 +61,7 @@ Salonko je spletna aplikacija za rezervacijo terminov v frizerskem salonu. Stran
 ## Struktura repozitorija
 
 ```
-frontend/   aplikacija React 
-backend/    REST API v Express
+frontend/   aplikacija React (Vite)
+backend/    REST API v Expressu
 docs/       projektna dokumentacija, wireframi in ADR
 ```
