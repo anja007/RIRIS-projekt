@@ -10,7 +10,7 @@ Salonko je spletna aplikacija za rezervacijo terminov v frizerskem salonu. Stran
 | Zaledje (backend) | Node.js, Express, TypeScript, Zod |
 | Podatkovna baza | MongoDB, Mongoose |
 | Avtentikacija | JWT v piškotku httpOnly, bcrypt |
-| Lokalni razvoj | Docker Compose, npm, ESLint, Prettier |
+| Lokalni razvoj | npm, ESLint, Prettier |
 | Testiranje | Vitest, Supertest |
 
 ## Lokalni zagon
@@ -18,19 +18,22 @@ Salonko je spletna aplikacija za rezervacijo terminov v frizerskem salonu. Stran
 ### Predpogoji
 
 - Node.js 20 ali novejši in npm
-- Docker Desktop (zagnan)
+- MongoDB 7 (Community Server), nameščen lokalno
 
-### 1. Zagon MongoDB v Dockerju
+### 1. MongoDB kot replica set (samo enkrat)
 
-V korenski mapi projekta:
+Rezervacija uporablja transakcije, ki delujejo samo na replica setu.
 
-```bash
-docker compose up -d
-```
-
-Ukaz zažene MongoDB 7 v vsebniku `salonko-mongo` kot replica set z enim vozliščem (`rs0`), ker rezervacija uporablja transakcije. Ob prvem zagonu počakajte približno 10 sekund, da `docker compose ps` pri vsebniku pokaže `healthy`. Podatki ostanejo v volumnu `mongo-data` tudi po `docker compose down`.
-
-Če je na računalniku nameščen in zagnan tudi lokalni MongoDB, ga najprej ustavite (Windows: *Services* → *MongoDB Server* → *Stop*), ker uporablja ista vrata 27017.
+1. Odprite konfiguracijsko datoteko MongoDB (Windows: `C:\Program Files\MongoDB\Server\7.0\bin\mongod.cfg`) in dodajte:
+   ```yaml
+   replication:
+     replSetName: rs0
+   ```
+2. Ponovno zaženite storitev MongoDB (Windows: *Services* → *MongoDB Server* → *Restart*).
+3. V `mongosh` enkrat izvedite:
+   ```js
+   rs.initiate()
+   ```
 
 ### 2. Nastavitve zaledja
 
@@ -42,11 +45,22 @@ V korenski mapi projekta:
 
 ```bash
 npm install
+npm run db:seed   # vnese testne podatke (izbriše obstoječe!)
 npm run dev
 ```
 
 - Odjemalec: http://localhost:5173
 - Zaledje: http://localhost:3000 (npr. http://localhost:3000/api/health)
+
+### Testni računi
+
+Geslo za vse račune je `geslo123`.
+
+| Vloga | E-pošta |
+|---|---|
+| Administrator | admin@salonko.si |
+| Frizerji | nina@salonko.si, marko@salonko.si, lea@salonko.si |
+| Stranka | ana@primer.si |
 
 ## Dokumentacija
 
