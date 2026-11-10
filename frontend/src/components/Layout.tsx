@@ -4,14 +4,14 @@ import type { Role } from '../api';
 
 const LINKS: Record<Role, { to: string; label: string }[]> = {
   CLIENT: [
-    { to: '/rezervacija', label: 'Rezervacija' },
-    { to: '/moji-termini', label: 'Moji termini' },
+    { to: '/booking', label: 'Rezervacija' },
+    { to: '/my-appointments', label: 'Moji termini' },
   ],
-  HAIRDRESSER: [{ to: '/urnik', label: 'Moj urnik' }],
+  HAIRDRESSER: [{ to: '/schedule', label: 'Moj urnik' }],
   ADMIN: [
-    { to: '/admin/frizerji', label: 'Frizerji' },
-    { to: '/admin/storitve', label: 'Storitve' },
-    { to: '/admin/neprihodi', label: 'Neprihodi' },
+    { to: '/admin/hairdressers', label: 'Frizerji' },
+    { to: '/admin/services', label: 'Storitve' },
+    { to: '/admin/no-shows', label: 'Neprihodi' },
   ],
 };
 
@@ -31,7 +31,7 @@ export default function Layout() {
 
   async function handleLogout() {
     await logout();
-    navigate('/prijava');
+    navigate('/login');
   }
 
   const isAdmin = user?.role === 'ADMIN';
@@ -60,7 +60,7 @@ export default function Layout() {
                 </button>
               </>
             ) : (
-              <NavLink to="/prijava" className={navClass}>
+              <NavLink to="/login" className={navClass}>
                 Prijava
               </NavLink>
             )}

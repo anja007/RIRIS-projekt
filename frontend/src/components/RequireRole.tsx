@@ -6,7 +6,7 @@ import type { Role } from '../api';
 export default function RequireRole({ roles }: { roles: Role[] }) {
   const { user, loading } = useAuth();
   if (loading) return <p className="text-muted">Nalaganje …</p>;
-  if (!user) return <Navigate to="/prijava" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   if (!roles.includes(user.role)) return <Navigate to={homePathFor(user.role)} replace />;
   return <Outlet />;
 }
