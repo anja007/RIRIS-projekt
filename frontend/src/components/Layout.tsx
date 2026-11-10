@@ -16,11 +16,15 @@ const LINKS: Record<Role, { to: string; label: string }[]> = {
 };
 
 const ROLE_LABELS: Record<Role, string> = {
-  CLIENT: 'stranka',
+  CLIENT: '',
   HAIRDRESSER: 'frizer',
   ADMIN: 'administrator',
 };
 
+const navClass = ({ isActive }: { isActive: boolean }) =>
+  `border-b-2 py-1 ${isActive ? 'border-fg text-fg' : 'border-transparent text-muted hover:text-fg'}`;
+
+/** Glava kot v wireframih: logotip levo, meni vloge in uporabnik desno; administrator ima zavihke v drugi vrstici. */
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -30,37 +34,53 @@ export default function Layout() {
     navigate('/prijava');
   }
 
+  const isAdmin = user?.role === 'ADMIN';
+
   return (
     <div className="min-h-screen">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
-          <span className="rounded border-2 border-gray-800 px-3 py-1 text-xl font-semibold">Salonko</span>
-          {user && (
-            <nav className="flex flex-1 gap-4">
-              {LINKS[user.role].map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  className={({ isActive }) =>
-                    `border-b-2 py-1 text-sm ${isActive ? 'border-gray-800 font-medium' : 'border-transparent text-gray-600'}`
-                  }
-                >
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
-          )}
-          {user && (
-            <div className="ml-auto flex items-center gap-4 text-sm">
-              <span className="text-gray-600">
-                {user.firstName} {user.lastName} · {ROLE_LABELS[user.role]}
-              </span>
-              <button onClick={handleLogout} className="font-medium hover:underline">
-                Odjava
-              </button>
-            </div>
-          )}
+      <header className="border-b border-line bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-3 px-4 py-4">
+          <NavLink to="/" className="rounded-md border-2 border-fg px-4 py-1 font-display text-2xl">
+            Salonko
+          </NavLink>
+          <nav className="ml-auto flex flex-wrap items-center gap-x-6 gap-y-2">
+            {user && !isAdmin && LINKS[user.role].map((link) => (
+              <NavLink key={link.to} to={link.to} className={navClass}>
+                {link.label}
+              </NavLink>
+            ))}
+            {user ? (
+              <>
+                <span className="rounded-lg border border-line px-3 py-1 text-sm">
+                  {user.firstName} {user.lastName}
+                  {ROLE_LABELS[user.role] && <span className="text-muted"> · {ROLE_LABELS[user.role]}</span>}
+                </span>
+                <button onClick={handleLogout} className="cursor-pointer text-muted hover:text-fg">
+                  Odjava
+                </button>
+              </>
+            ) : (
+              <NavLink to="/prijava" className={navClass}>
+                Prijava
+              </NavLink>
+            )}
+          </nav>
         </div>
+        {isAdmin && (
+          <nav className="mx-auto flex max-w-6xl gap-1 px-4">
+            {LINKS.ADMIN.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) =>
+                  `-mb-px rounded-t-lg border px-4 py-2 ${isActive ? 'border-line border-b-surface bg-bg text-fg' : 'border-transparent text-muted hover:text-fg'}`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        )}
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8">
         <Outlet />

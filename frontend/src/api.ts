@@ -41,3 +41,98 @@ export interface User {
   phone: string;
   role: Role;
 }
+
+export interface Service {
+  id: string;
+  name: string;
+  description: string;
+  durationMin: number;
+  price: number; // centi
+  active: boolean;
+}
+
+export interface WorkingHours {
+  weekday: number; // 1 = ponedeljek ... 7 = nedelja
+  startTime: string;
+  endTime: string;
+}
+
+export interface AdminHairdresser {
+  id: string;
+  active: boolean;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  serviceIds: string[];
+  workingHours: WorkingHours[];
+}
+
+export interface BookingHairdresser {
+  id: string;
+  name: string;
+  offers: boolean; // ali opravlja izbrano storitev
+}
+
+export interface BookingDay {
+  date: string; // LLLL-MM-DD
+  working: boolean; // vsaj en frizer ta dan dela
+  slots: number; // število prostih začetnih ur
+}
+
+export interface Slot {
+  time: string; // "11:00"
+  startsAt: string;
+  hairdresserIds: string[];
+}
+
+export type AppointmentStatus = 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
+
+export interface Appointment {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  status: AppointmentStatus;
+  price: number;
+  clientNote: string;
+  cancellationReason: string;
+  serviceId: string;
+  serviceName: string;
+  hairdresserId: string;
+  hairdresserName: string;
+  canChange: boolean;
+}
+
+export interface ScheduleAppointment {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  status: AppointmentStatus;
+  clientName: string;
+  clientPhone: string;
+  clientNoShowCount: number;
+  serviceName: string;
+  clientNote: string;
+  cancellationReason: string;
+}
+
+export interface Schedule {
+  date: string;
+  workingHours: { startTime: string; endTime: string }[];
+  appointments: ScheduleAppointment[];
+}
+
+export interface HairdresserProfile {
+  workingHours: WorkingHours[];
+  services: { id: string; name: string; durationMin: number }[];
+}
+
+export interface NoShow {
+  id: string;
+  startsAt: string;
+  serviceName: string;
+  clientName: string;
+  clientPhone: string;
+  noShowCount: number;
+  hairdresserName: string;
+}
