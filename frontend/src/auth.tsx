@@ -41,7 +41,7 @@ export function useAuth() {
 
 /** Začetna stran za vlogo (US-02). */
 export function homePathFor(role: User['role']) {
-  if (role === 'CLIENT') return '/rezervacija';
-  if (role === 'HAIRDRESSER') return '/urnik';
-  return '/admin/frizerji';
+  if (role === 'CLIENT') return '/booking';
+  if (role === 'HAIRDRESSER') return '/schedule';
+  return '/admin/hairdressers';
 }
