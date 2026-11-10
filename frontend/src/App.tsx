@@ -3,6 +3,8 @@ import { AuthProvider, homePathFor, useAuth } from './auth';
 import Layout from './components/Layout';
 import RequireRole from './components/RequireRole';
 import LoginPage from './pages/LoginPage';
+import ServicesPage from './pages/admin/ServicesPage';
+import HairdressersPage from './pages/admin/HairdressersPage';
 
 function Home() {
   const { user, loading } = useAuth();
@@ -32,8 +34,8 @@ export default function App() {
           </Route>
 
           <Route element={<RequireRole roles={['ADMIN']} />}>
-            <Route path="/admin/hairdressers" element={<Soon title="Frizerji" />} />
-            <Route path="/admin/services" element={<Soon title="Storitve" />} />
+            <Route path="/admin/hairdressers" element={<HairdressersPage />} />
+            <Route path="/admin/services" element={<ServicesPage />} />
             <Route path="/admin/no-shows" element={<Soon title="Neprihodi" />} />
           </Route>
 
