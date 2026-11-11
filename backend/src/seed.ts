@@ -76,6 +76,7 @@ async function main() {
     },
   ];
 
+  const created: Record<string, unknown> = {};
   for (const h of hairdressers) {
     const user = await User.create({
       firstName: h.firstName,
@@ -85,11 +86,12 @@ async function main() {
       passwordHash,
       role: 'HAIRDRESSER',
     });
-    await Hairdresser.create({
+    const hairdresser = await Hairdresser.create({
       userId: user._id,
       serviceIds: h.services.map(byName),
       workingHours: h.hours,
     });
+    created[h.firstName] = hairdresser._id;
   }
 
   const clientUser = await User.create({
@@ -100,7 +102,36 @@ async function main() {
     passwordHash,
     role: 'CLIENT',
   });
-  await Client.create({ userId: clientUser._id });
+  const client = await Client.create({ userId: clientUser._id });
+
+  // Nekaj terminov stranke Ana za preizkus urnika in »Moji termini«.
+  const now = new Date();
+  const at = (daysFromToday: number, hh: number, mm = 0) =>
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysFromToday, hh, mm);
+  const quarter = (d: Date) => new Date(Math.floor(d.getTime() / 900000) * 900000);
+  const service = (name: string) => services.find((s) => s.name === name)!;
+  const appointment = (hairdresser: string, serviceName: string, startsAt: Date, status: 'CONFIRMED' | 'COMPLETED' = 'CONFIRMED') => {
+    const s = service(serviceName);
+    return {
+      clientId: client._id,
+      hairdresserId: created[hairdresser],
+      serviceId: s._id,
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + s.durationMin * 60000),
+      price: s.price,
+      status,
+    };
+  };
+  await Appointment.insertMany([
+    // pretekli, zaključen termin
+    appointment('Nina', 'Žensko striženje in feniranje', at(-7, 10), 'COMPLETED'),
+    // današnji termin, ki se je že začel: frizerka Nina lahko označi izid
+    appointment('Nina', 'Feniranje', quarter(new Date(now.getTime() - 15 * 60000))),
+    // čez manj kot 24 ur: stranka ga ne more več spremeniti prek spleta
+    appointment('Marko', 'Moško striženje', quarter(new Date(now.getTime() + 20 * 3600000))),
+    // čez 3 dni: stranka ga lahko prekliče ali prestavi
+    appointment('Nina', 'Žensko striženje in feniranje', at(3, 10)),
+  ]);
 
   console.log('Testni podatki so vneseni. Geslo za vse račune:', PASSWORD);
   console.log('  administrator: admin@salonko.si');

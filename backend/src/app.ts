@@ -6,6 +6,8 @@ import { adminServicesRouter, servicesRouter } from './routes/services';
 import { adminHairdressersRouter } from './routes/adminHairdressers';
 import { bookingRouter } from './routes/booking';
 import { appointmentsRouter } from './routes/appointments';
+import { hairdresserRouter } from './routes/hairdresser';
+import { adminAppointmentsRouter } from './routes/adminAppointments';
 
 export function createApp() {
   const app = express();
@@ -22,6 +24,8 @@ export function createApp() {
   app.use('/api/admin/hairdressers', adminHairdressersRouter);
   app.use('/api/booking', bookingRouter);
   app.use('/api/appointments', appointmentsRouter);
+  app.use('/api/hairdresser', hairdresserRouter);
+  app.use('/api/admin/appointments', adminAppointmentsRouter);
 
   app.use(errorHandler);
   return app;
