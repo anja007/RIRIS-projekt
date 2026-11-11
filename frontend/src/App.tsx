@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import ServicesPage from './pages/admin/ServicesPage';
 import HairdressersPage from './pages/admin/HairdressersPage';
 import BookingPage from './pages/client/BookingPage';
+import MyAppointmentsPage from './pages/client/MyAppointmentsPage';
 
 function Home() {
   const { user, loading } = useAuth();
@@ -27,7 +28,7 @@ export default function App() {
 
           <Route element={<RequireRole roles={['CLIENT']} />}>
             <Route path="/booking" element={<BookingPage />} />
-            <Route path="/my-appointments" element={<Soon title="Moji termini" />} />
+            <Route path="/my-appointments" element={<MyAppointmentsPage />} />
           </Route>
 
           <Route element={<RequireRole roles={['HAIRDRESSER']} />}>
