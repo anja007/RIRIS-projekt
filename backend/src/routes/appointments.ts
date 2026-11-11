@@ -1,16 +1,17 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { Appointment } from '../models/Appointment';
-import { asyncHandler } from '../lib/errors';
+import { asyncHandler, HttpError } from '../lib/errors';
 import { currentClient } from '../lib/current';
 import { objectId } from '../lib/validation';
 import { requireAuth, requireRole } from '../middleware/auth';
-import { bookAppointment } from '../services/booking';
+import { bookAppointment, rescheduleAppointment } from '../services/booking';
 
 export const appointmentsRouter = Router();
 appointmentsRouter.use(requireAuth, requireRole('CLIENT'));
 
 export const CHANGE_DEADLINE_HOURS = 24;
+export const DEADLINE_MESSAGE = 'Spletne spremembe so zaprte 24 ur pred terminom. Pokličite salon.';
 
 function canChange(a: { status: string; startsAt: Date }, now = new Date()) {
   return a.status === 'CONFIRMED' && a.startsAt.getTime() - now.getTime() >= CHANGE_DEADLINE_HOURS * 3600 * 1000;
@@ -46,6 +47,16 @@ async function loadDto(id: unknown) {
   return appointmentDto(a);
 }
 
+/** Termin prijavljene stranke; tuj termin vrne 403 (US-09, kriterij 5). */
+async function ownAppointment(req: Parameters<typeof currentClient>[0]) {
+  const client = await currentClient(req);
+  const id = objectId.parse(req.params.id);
+  const appointment = await Appointment.findById(id);
+  if (!appointment) throw new HttpError(404, 'Termin ne obstaja');
+  if (String(appointment.clientId) !== String(client._id)) throw new HttpError(403, 'Dostop ni dovoljen');
+  return appointment;
+}
+
 // US-08: rezervacija
 const bookSchema = z.object({
   serviceId: objectId,
@@ -61,5 +72,45 @@ appointmentsRouter.post(
     const client = await currentClient(req);
     const appointment = await bookAppointment({ ...data, clientId: client._id });
     res.status(201).json(await loadDto(appointment._id));
+  }),
+);
+
+// US-09: moji termini (prihodnji in pretekli)
+appointmentsRouter.get(
+  '/mine',
+  asyncHandler(async (req, res) => {
+    const client = await currentClient(req);
+    const list = await Appointment.find({ clientId: client._id }).sort({ startsAt: -1 }).populate(populateAll).lean();
+    res.json(list.map((a) => appointmentDto(a)));
+  }),
+);
+
+// US-09: preklic najkasneje 24 ur pred začetkom; čas se takoj sprosti
+appointmentsRouter.post(
+  '/:id/cancel',
+  asyncHandler(async (req, res) => {
+    const appointment = await ownAppointment(req);
+    if (appointment.status !== 'CONFIRMED') throw new HttpError(409, 'Termin ni več potrjen');
+    if (!canChange(appointment)) throw new HttpError(409, DEADLINE_MESSAGE);
+    appointment.status = 'CANCELLED';
+    await appointment.save();
+    res.json(await loadDto(appointment._id));
+  }),
+);
+
+// US-09: prestavitev istega termina
+const rescheduleSchema = z.object({
+  startsAt: z.coerce.date({ invalid_type_error: 'Neveljaven čas začetka' }),
+});
+
+appointmentsRouter.put(
+  '/:id/reschedule',
+  asyncHandler(async (req, res) => {
+    const { startsAt } = rescheduleSchema.parse(req.body);
+    const appointment = await ownAppointment(req);
+    if (appointment.status !== 'CONFIRMED') throw new HttpError(409, 'Termin ni več potrjen');
+    if (!canChange(appointment)) throw new HttpError(409, DEADLINE_MESSAGE);
+    await rescheduleAppointment(appointment._id, startsAt);
+    res.json(await loadDto(appointment._id));
   }),
 );

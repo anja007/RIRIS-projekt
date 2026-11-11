@@ -125,3 +125,38 @@ export async function bookAppointment(input: {
   }
   throw new HttpError(409, SLOT_TAKEN);
 }
+
+/** US-09: prestavitev spremeni čas istega termina pri istem frizerju. */
+export async function rescheduleAppointment(appointmentId: Types.ObjectId, startsAt: Date) {
+  const appointment = await Appointment.findById(appointmentId).lean();
+  if (!appointment) throw new HttpError(404, 'Termin ne obstaja');
+  if (startsAt.getTime() <= Date.now()) throw new HttpError(409, SLOT_TAKEN);
+
+  const hairdresser = (await Hairdresser.findById(appointment.hairdresserId).lean()) as unknown as BookableHairdresser | null;
+  if (!hairdresser) throw new HttpError(404, 'Frizer ne obstaja');
+
+  // termin obdrži svojo dolžino (US-04, kriterij 2)
+  const durationMin = (appointment.endsAt.getTime() - appointment.startsAt.getTime()) / 60000;
+  const endsAt = new Date(startsAt.getTime() + durationMin * 60000);
+
+  try {
+    return await inBookingTransaction(hairdresser._id, async (session) => {
+      const free = await isStillFree({
+        hairdresser,
+        startsAt,
+        durationMin,
+        session,
+        excludeAppointmentId: appointment._id,
+      });
+      if (!free) throw new SlotTakenError();
+      return Appointment.findOneAndUpdate(
+        { _id: appointment._id, status: 'CONFIRMED' },
+        { startsAt, endsAt },
+        { new: true, session },
+      );
+    });
+  } catch (err) {
+    if (err instanceof SlotTakenError) throw new HttpError(409, SLOT_TAKEN);
+    throw err;
+  }
+}
