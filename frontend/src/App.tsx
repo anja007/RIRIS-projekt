@@ -5,6 +5,7 @@ import RequireRole from './components/RequireRole';
 import LoginPage from './pages/LoginPage';
 import ServicesPage from './pages/admin/ServicesPage';
 import HairdressersPage from './pages/admin/HairdressersPage';
+import BookingPage from './pages/client/BookingPage';
 
 function Home() {
   const { user, loading } = useAuth();
@@ -25,7 +26,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
 
           <Route element={<RequireRole roles={['CLIENT']} />}>
-            <Route path="/booking" element={<Soon title="Rezervacija termina" />} />
+            <Route path="/booking" element={<BookingPage />} />
             <Route path="/my-appointments" element={<Soon title="Moji termini" />} />
           </Route>
 

@@ -5,6 +5,7 @@ import { authRouter } from './routes/auth';
 import { adminServicesRouter, servicesRouter } from './routes/services';
 import { adminHairdressersRouter } from './routes/adminHairdressers';
 import { bookingRouter } from './routes/booking';
+import { appointmentsRouter } from './routes/appointments';
 
 export function createApp() {
   const app = express();
@@ -20,6 +21,7 @@ export function createApp() {
   app.use('/api/admin/services', adminServicesRouter);
   app.use('/api/admin/hairdressers', adminHairdressersRouter);
   app.use('/api/booking', bookingRouter);
+  app.use('/api/appointments', appointmentsRouter);
 
   app.use(errorHandler);
   return app;
