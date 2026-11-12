@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   api,
@@ -9,6 +9,7 @@ import {
   type Service,
   type Slot,
 } from '../../api';
+import { useAuth } from '../../auth';
 import { Alert, Button, Note, PageTitle, Panel } from '../../components/ui';
 import { dateShort, dateWords, euro, freeCount, fromDateKey, time, toDateKey, toMinutes } from '../../format';
 
@@ -21,11 +22,17 @@ const SLOT_GROUPS = [
   { label: 'Popoldne', from: 13 * 60, to: 24 * 60 },
 ];
 
-/** WF-02: čarovnik za rezervacijo (US-07, US-08) in prestavitev termina (US-09). */
+/**
+ * WF-02: čarovnik za rezervacijo (US-07, US-08) in prestavitev termina (US-09).
+ * Gost vidi proste termine brez prijave; ob potrditvi gre na prijavo in se vrne na isto izbiro (US-07, kriterij 6).
+ */
 export default function BookingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [params] = useSearchParams();
   const rescheduleId = params.get('reschedule');
+  // izbira iz URL: ?service=… iz cenika ali celotna izbira po vrnitvi s prijave
+  const restore = useRef({ date: params.get('date') ?? '', start: params.get('start') ?? '' });
 
   const [services, setServices] = useState<Service[]>([]);
   const [hairdressers, setHairdressers] = useState<BookingHairdresser[]>([]);
@@ -33,11 +40,11 @@ export default function BookingPage() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [original, setOriginal] = useState<Appointment | null>(null);
 
-  const [serviceId, setServiceId] = useState('');
-  const [hairdresserId, setHairdresserId] = useState('');
+  const [serviceId, setServiceId] = useState(rescheduleId ? '' : (params.get('service') ?? ''));
+  const [hairdresserId, setHairdresserId] = useState(rescheduleId ? '' : (params.get('hairdresser') ?? ''));
   const [date, setDate] = useState('');
   const [slot, setSlot] = useState<Slot | null>(null);
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState(params.get('note') ?? '');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -77,14 +84,25 @@ export default function BookingPage() {
     setDays([]);
     setDate('');
     if (!query) return;
-    api.get<BookingDay[]>(`/booking/days?${query}&days=14`).then(setDays);
+    api.get<BookingDay[]>(`/booking/days?${query}&days=14`).then((list) => {
+      setDays(list);
+      const wanted = restore.current.date;
+      restore.current.date = '';
+      if (wanted && list.some((d) => d.date === wanted && d.slots > 0)) setDate(wanted);
+    });
   }, [query]);
 
   function loadSlots() {
     setSlot(null);
     setSlots([]);
     if (!query || !date) return Promise.resolve();
-    return api.get<Slot[]>(`/booking/slots?${query}&date=${date}`).then(setSlots);
+    return api.get<Slot[]>(`/booking/slots?${query}&date=${date}`).then((list) => {
+      setSlots(list);
+      const wanted = restore.current.start;
+      restore.current.start = '';
+      const found = wanted ? list.find((s) => s.startsAt === wanted) : undefined;
+      if (found) setSlot(found);
+    });
   }
 
   useEffect(() => {
@@ -114,6 +132,13 @@ export default function BookingPage() {
 
   async function confirm() {
     if (!slot) return;
+    if (!user) {
+      // gost: prijava ali registracija, nato nazaj na isto izbiro
+      const back = new URLSearchParams({ service: serviceId, hairdresser: hairdresserId, date, start: slot.startsAt });
+      if (note) back.set('note', note);
+      navigate('/login', { state: { returnTo: `/booking?${back.toString()}` } });
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -141,7 +166,7 @@ export default function BookingPage() {
 
   return (
     <div>
-      <PageTitle>{rescheduleId ? 'Prestavitev termina' : 'Rezervacija termina'}</PageTitle>
+      <PageTitle>{rescheduleId ? 'Prestavitev termina' : user ? 'Rezervacija termina' : 'Prosti termini'}</PageTitle>
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-5">
@@ -296,8 +321,9 @@ export default function BookingPage() {
               </div>
             )}
             <Button variant="primary" className="mt-4 w-full" onClick={confirm} disabled={!slot || busy}>
-              {rescheduleId ? 'Potrdi prestavitev' : 'Potrdi rezervacijo'}
+              {rescheduleId ? 'Potrdi prestavitev' : user ? 'Potrdi rezervacijo' : 'Prijava in potrditev'}
             </Button>
+            {!user && <p className="mt-3 text-sm text-muted">Za potrditev se prijavite ali ustvarite račun stranke.</p>}
             {freeCancelUntil && (
               <p className="mt-3 text-sm text-muted">
                 Brezplačen preklic do {dateShort(freeCancelUntil)}, {time(freeCancelUntil)}

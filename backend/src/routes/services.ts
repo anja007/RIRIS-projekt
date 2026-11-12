@@ -29,6 +29,35 @@ servicesRouter.get(
   }),
 );
 
+// Javni cenik s frizerji, ki storitev opravljajo (gost; US-04 kriterij 3, US-07 kriterij 6).
+servicesRouter.get(
+  '/catalog',
+  asyncHandler(async (_req, res) => {
+    const services = await Service.find({ active: true }).sort({ name: 1 }).lean();
+    const hairdressers = await Hairdresser.find({ active: true, 'workingHours.0': { $exists: true } })
+      .populate('userId', 'firstName lastName')
+      .lean();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const nameOf = (h: any) => `${h.userId?.firstName ?? ''} ${h.userId?.lastName ?? ''}`.trim();
+    const offers = (h: { serviceIds?: unknown[] }, serviceId: unknown) =>
+      (h.serviceIds ?? []).some((id) => String(id) === String(serviceId));
+
+    res.json({
+      services: services.map((s) => ({
+        ...toDto(s),
+        hairdressers: hairdressers.filter((h) => offers(h, s._id)).map(nameOf).sort((a, b) => a.localeCompare(b, 'sl')),
+      })),
+      hairdressers: hairdressers
+        .map((h) => ({
+          id: String(h._id),
+          name: nameOf(h),
+          services: services.filter((s) => offers(h, s._id)).map((s) => s.name),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'sl')),
+    });
+  }),
+);
+
 // Upravljanje storitev (US-04), samo administrator.
 export const adminServicesRouter = Router();
 adminServicesRouter.use(requireAuth, requireRole('ADMIN'));

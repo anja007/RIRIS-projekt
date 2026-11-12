@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { api, ApiError, type User } from '../api';
 import { homePathFor, useAuth } from '../auth';
 import { Alert, Button, Field, Panel } from '../components/ui';
@@ -8,23 +8,33 @@ import { Alert, Button, Field, Panel } from '../components/ui';
 export default function LoginPage() {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // gost je izbral termin v čarovniku; po prijavi se vrne na isto izbiro (US-07, kriterij 6)
+  const returnTo: string | undefined = location.state?.returnTo;
 
   if (user) return <Navigate to={homePathFor(user.role)} replace />;
 
   function onLoggedIn(u: User) {
     setUser(u);
-    navigate(homePathFor(u.role));
+    navigate(returnTo && u.role === 'CLIENT' ? returnTo : homePathFor(u.role));
   }
 
   return (
-    <div className="mx-auto grid max-w-5xl items-start gap-10 md:grid-cols-2">
-      <div>
-        <h1 className="mb-5 text-4xl">Dobrodošli nazaj</h1>
-        <LoginForm onDone={onLoggedIn} />
-      </div>
-      <div>
-        <h1 className="mb-5 text-4xl">Prvič v Salonku?</h1>
-        <RegisterForm onDone={onLoggedIn} />
+    <div className="mx-auto max-w-5xl">
+      {returnTo && (
+        <div className="mb-6">
+          <Alert kind="info">Za potrditev rezervacije se prijavite ali ustvarite račun. Izbrani termin ostane izbran.</Alert>
+        </div>
+      )}
+      <div className="grid items-start gap-10 md:grid-cols-2">
+        <div>
+          <h1 className="mb-5 text-4xl">Dobrodošli nazaj</h1>
+          <LoginForm onDone={onLoggedIn} />
+        </div>
+        <div>
+          <h1 className="mb-5 text-4xl">Prvič v Salonku?</h1>
+          <RegisterForm onDone={onLoggedIn} />
+        </div>
       </div>
     </div>
   );
