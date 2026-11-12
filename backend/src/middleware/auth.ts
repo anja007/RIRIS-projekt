@@ -51,6 +51,19 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   }
 }
 
+/** Kot requireAuth, a brez piškotka ne vrne napake: gost lahko nadaljuje (javni prosti termini). */
+export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  const token = req.cookies?.[TOKEN_COOKIE];
+  if (!token) return next();
+  try {
+    const payload = jwt.verify(token, config.jwtSecret) as jwt.JwtPayload;
+    req.user = { id: payload.sub as string, role: payload.role as Role };
+  } catch {
+    // neveljaven piškotek: nadaljuje kot gost
+  }
+  next();
+}
+
 /** Dovoli dostop samo navedenim vlogam, sicer 403 (US-02). */
 export function requireRole(...roles: Role[]) {
   return (req: Request, _res: Response, next: NextFunction) => {

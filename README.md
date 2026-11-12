@@ -73,6 +73,7 @@ Skripta `npm run db:seed` vnese tudi nekaj terminov stranke Ana, zato je mogoče
 
 | Vloga | Prijava | Kaj preizkusiti |
 |---|---|---|
+| Gost | brez prijave | Cenik (storitve, trajanje, cena, frizerji), Prosti termini; ob »Prijava in potrditev« prijava ali registracija in vrnitev na izbrani termin |
 | Stranka | ana@primer.si | Rezervacija (storitev → frizer ali »Kdorkoli prost« → dan → ura → potrditev), Moji termini (preklic, prestavitev, termin v manj kot 24 urah) |
 | Frizer | nina@salonko.si | Moj urnik: današnji termin označi kot »Zaključen« ali »Neprihod«, prekliči prihodnji termin z razlogom |
 | Administrator | admin@salonko.si | Storitve, Frizerji (nov frizer, storitve, delovni čas), Neprihodi (popravek v zaključen) |
