@@ -6,12 +6,12 @@ import {
   type Appointment,
   type BookingDay,
   type BookingHairdresser,
-  type Service,
+  type Catalog,
   type Slot,
 } from '../../api';
 import { useAuth } from '../../auth';
 import { Alert, Button, Note, PageTitle, Panel } from '../../components/ui';
-import { dateShort, dateWords, euro, freeCount, fromDateKey, time, toDateKey, toMinutes } from '../../format';
+import { dateShort, dateWords, euro, freeCount, fromDateKey, SALON_PHONE, time, toDateKey, toMinutes } from '../../format';
 
 const ANY = 'any';
 
@@ -24,7 +24,7 @@ const SLOT_GROUPS = [
 
 /**
  * WF-02: čarovnik za rezervacijo (US-07, US-08) in prestavitev termina (US-09).
- * Gost vidi proste termine brez prijave; ob potrditvi gre na prijavo in se vrne na isto izbiro (US-07, kriterij 6).
+ * Korak 1 je hkrati cenik (storitev, trajanje, cena, frizerji). Gost vidi cenik in proste termine brez prijave; ob potrditvi gre na prijavo in se vrne na isto izbiro (US-07, kriterij 6).
  */
 export default function BookingPage() {
   const navigate = useNavigate();
@@ -34,7 +34,8 @@ export default function BookingPage() {
   // izbira iz URL: ?service=… iz cenika ali celotna izbira po vrnitvi s prijave
   const restore = useRef({ date: params.get('date') ?? '', start: params.get('start') ?? '' });
 
-  const [services, setServices] = useState<Service[]>([]);
+  // cenik: storitve s trajanjem, ceno in frizerji, ki jih opravljajo
+  const [services, setServices] = useState<Catalog['services']>([]);
   const [hairdressers, setHairdressers] = useState<BookingHairdresser[]>([]);
   const [days, setDays] = useState<BookingDay[]>([]);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -58,7 +59,7 @@ export default function BookingPage() {
   }, [rescheduleId, serviceId, hairdresserId]);
 
   useEffect(() => {
-    api.get<Service[]>('/services').then(setServices);
+    api.get<Catalog>('/services/catalog').then((c) => setServices(c.services));
   }, []);
 
   // Prestavitev: ista storitev in frizer, začnemo pri izbiri dneva.
@@ -166,7 +167,12 @@ export default function BookingPage() {
 
   return (
     <div>
-      <PageTitle>{rescheduleId ? 'Prestavitev termina' : user ? 'Rezervacija termina' : 'Prosti termini'}</PageTitle>
+      <PageTitle>{rescheduleId ? 'Prestavitev termina' : user ? 'Rezervacija termina' : 'Cenik in prosti termini'}</PageTitle>
+      {!user && (
+        <p className="-mt-4 mb-6 text-muted">
+          Frizerski salon Salonko · telefon {SALON_PHONE} · Cenik in proste termine si lahko ogledate brez prijave, za rezervacijo pa potrebujete račun.
+        </p>
+      )}
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-5">
@@ -185,11 +191,15 @@ export default function BookingPage() {
                     key={s.id}
                     className="choice px-4 py-3"
                     aria-pressed={s.id === serviceId}
+                    disabled={s.hairdressers.length === 0}
                     onClick={() => chooseService(s.id)}
                   >
                     <div className="font-medium">{s.name}</div>
                     <div className="text-sm text-muted">
                       {s.durationMin} min · {euro(s.price)}
+                    </div>
+                    <div className="mt-1 text-xs text-muted">
+                      {s.hairdressers.length ? s.hairdressers.join(', ') : 'trenutno ni na voljo'}
                     </div>
                   </button>
                 ))}

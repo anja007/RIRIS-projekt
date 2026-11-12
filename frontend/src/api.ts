@@ -137,7 +137,7 @@ export interface NoShow {
   hairdresserName: string;
 }
 
-/** Javni cenik (GET /api/services/catalog). */
+/** Javni cenik za korak 1 čarovnika (GET /api/services/catalog). */
 export interface Catalog {
   services: (Service & { hairdressers: string[] })[];
   hairdressers: { id: string; name: string; services: string[] }[];
