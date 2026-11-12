@@ -4,7 +4,6 @@ import type { Role } from '../api';
 
 const LINKS: Record<Role, { to: string; label: string }[]> = {
   CLIENT: [
-    { to: '/services', label: 'Cenik' },
     { to: '/booking', label: 'Rezervacija' },
     { to: '/my-appointments', label: 'Moji termini' },
   ],
@@ -61,13 +60,10 @@ export default function Layout() {
                 </button>
               </>
             ) : (
-              // gost (WF-01): cenik, prosti termini in prijava
+              // gost: cenik in prosti termini sta ena stran (čarovnik), poleg je prijava
               <>
-                <NavLink to="/services" className={navClass}>
-                  Cenik
-                </NavLink>
                 <NavLink to="/booking" className={navClass}>
-                  Prosti termini
+                  Cenik in termini
                 </NavLink>
                 <NavLink to="/login" className={navClass}>
                   Prijava
