@@ -1,0 +1,84 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: frontend
+          path: frontend/dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: backend
+          path: backend/dist
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage
+          path: |
+            backend/coverage
+            frontend/coverage
+
+  deploy:
+    needs: [lint, build, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: backend
+          path: backend
+      - uses: actions/download-artifact@v8
+        with:
+          name: frontend
+          path: frontend
+      - name: Connect the frontend to the backend
+        run: |
+          echo "/api/*  ${{ vars.BACKEND_URL }}/api/:splat  200" > frontend/_redirects
+          echo "/*  /index.html  200" >> frontend/_redirects
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: backend
+      - run: npx netlify-cli@27 deploy --dir=frontend --no-build --prod
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
